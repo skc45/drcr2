@@ -31,3 +31,32 @@ Set your display name in the sidebar. Posts are stored in `server/data.json`.
 
 - React + Vite (client)
 - Express + JSON file store (server)
+
+## Deploy to the Internet
+
+### Option A — Render (permanent, free)
+
+1. Push is already on GitHub: [github.com/skc45/drcr2](https://github.com/skc45/drcr2)
+2. Open [Render one-click deploy](https://render.com/deploy?repo=https://github.com/skc45/drcr2)
+3. Sign in with GitHub and click **Apply** — Render reads `render.yaml` and deploys automatically.
+
+Your app will get a URL like `https://drcr2.onrender.com`.
+
+### Option B — Docker
+
+```bash
+docker build -t drcr2 .
+docker run -p 3001:3001 drcr2
+```
+
+### Option C — Local tunnel (temporary)
+
+While the server runs locally:
+
+```bash
+npm run build
+npm start
+npx localtunnel --port 3001
+```
+
+Note: free Render instances spin down after inactivity; the first request may take ~30s to wake up. Post data on Render uses ephemeral disk and resets on redeploy.
