@@ -8,7 +8,11 @@
     "dev:client": "npm run dev --prefix client",
     "install:all": "npm install && npm install --prefix client",
     "build": "npm run build --prefix client",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "android:sync": "npm run build --prefix client && npm run cap:sync --prefix client",
+    "android:open": "npm run cap:open --prefix client",
+    "android:apk": "npm run android:sync && cd client/android && ./gradlew assembleDebug",
+    "test": "node --test scripts/test-local-store.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -1,0 +1,22 @@
+{
+  "appId": "com.skc45.drcr2",
+  "appName": "DRCR2",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0d0f12"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "backgroundColor": "#0d0f12",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#0d0f12"
+    }
+  }
+}
