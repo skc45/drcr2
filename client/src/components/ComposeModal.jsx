@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { createPost } from '../api';
+import { createPost, getUsername } from '../api';
 
 export default function ComposeModal({ method, boards, onClose, onCreated, defaults = {} }) {
-  const [author, setAuthor] = useState(defaults.author || '');
+  const [author, setAuthor] = useState(defaults.author || getUsername());
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [board_slug, setBoardSlug] = useState(defaults.board_slug || boards[0]?.slug || '');

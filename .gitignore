@@ -4,3 +4,7 @@ client/dist/
 server/data.json
 *.log
 .DS_Store
+*.apk
+!releases/*.apk
+*.aab
+*.ap_

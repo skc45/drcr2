@@ -1,30 +1,42 @@
-const API = '/api';
+import { useLocalApi } from './platform';
+import * as local from './localStore';
+
+function apiUrl(path) {
+  const origin = import.meta.env.VITE_API_URL || '';
+  return `${origin}/api${path}`;
+}
+
+async function readError(res, fallback) {
+  const err = await res.json().catch(() => ({}));
+  return err.error || fallback;
+}
 
 export async function fetchBoards() {
-  const res = await fetch(`${API}/boards`);
+  if (useLocalApi()) return local.getBoards();
+  const res = await fetch(apiUrl('/boards'));
   if (!res.ok) throw new Error('Failed to load boards');
   return res.json();
 }
 
 export async function fetchPosts(method, params = {}) {
+  if (useLocalApi()) return local.listPosts(method, params);
   const qs = new URLSearchParams(params).toString();
-  const url = `${API}/posts/${method}${qs ? `?${qs}` : ''}`;
+  const url = apiUrl(`/posts/${method}${qs ? `?${qs}` : ''}`);
   const res = await fetch(url);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed to load posts');
-  }
+  if (!res.ok) throw new Error(await readError(res, 'Failed to load posts'));
   return res.json();
 }
 
 export async function fetchPost(id) {
-  const res = await fetch(`${API}/post/${id}`);
+  if (useLocalApi()) return local.getThread(id);
+  const res = await fetch(apiUrl(`/post/${id}`));
   if (!res.ok) throw new Error('Post not found');
   return res.json();
 }
 
 export async function createPost(method, body) {
-  const res = await fetch(`${API}/posts/${method}`, {
+  if (useLocalApi()) return local.createPost(method, body);
+  const res = await fetch(apiUrl(`/posts/${method}`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -35,7 +47,8 @@ export async function createPost(method, body) {
 }
 
 export async function replyToPost(id, body) {
-  const res = await fetch(`${API}/post/${id}/reply`, {
+  if (useLocalApi()) return local.replyToPost(id, body);
+  const res = await fetch(apiUrl(`/post/${id}/reply`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -46,19 +59,22 @@ export async function replyToPost(id, body) {
 }
 
 export async function upvotePost(id) {
-  const res = await fetch(`${API}/post/${id}/upvote`, { method: 'POST' });
+  if (useLocalApi()) return local.upvotePost(id);
+  const res = await fetch(apiUrl(`/post/${id}/upvote`), { method: 'POST' });
   if (!res.ok) throw new Error('Failed to upvote');
   return res.json();
 }
 
 export async function featurePost(id) {
-  const res = await fetch(`${API}/post/${id}/feature`, { method: 'POST' });
+  if (useLocalApi()) return local.featurePost(id);
+  const res = await fetch(apiUrl(`/post/${id}/feature`), { method: 'POST' });
   if (!res.ok) throw new Error('Failed to feature');
   return res.json();
 }
 
 export async function deletePost(id) {
-  const res = await fetch(`${API}/post/${id}`, { method: 'DELETE' });
+  if (useLocalApi()) return local.deletePost(id);
+  const res = await fetch(apiUrl(`/post/${id}`), { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete');
   return res.json();
 }

@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { METHODS } from './constants';
 import { getUsername, setUsername } from './api';
+import { isNativeApp } from './platform';
 import {
   HomeView,
   TrashView,
@@ -15,7 +16,32 @@ import {
   ThreadView,
 } from './views/MethodViews';
 
-function Sidebar() {
+function useCompactLayout() {
+  const native = isNativeApp();
+  const [narrow, setNarrow] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : true
+  );
+
+  useEffect(() => {
+    if (native) return undefined;
+    const mq = window.matchMedia('(max-width: 768px)');
+    const onChange = () => setNarrow(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [native]);
+
+  return native || narrow;
+}
+
+function pageTitle(pathname) {
+  const segment = pathname.split('/').filter(Boolean)[0];
+  if (!segment) return 'Home';
+  if (segment === 'post') return 'Thread';
+  return METHODS[segment]?.label || 'DRCR2';
+}
+
+function Sidebar({ onNavigate }) {
   const [user, setUser] = useState(getUsername());
 
   function handleUserChange(e) {
@@ -31,14 +57,14 @@ function Sidebar() {
         <p>8 posting methods</p>
       </div>
       <nav className="nav-section">
-        <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+        <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={onNavigate}>
           <span className="nav-icon">⌂</span> Home
         </NavLink>
       </nav>
       <nav className="nav-section">
         <div className="nav-label">Posting Methods</div>
         {Object.entries(METHODS).map(([key, m]) => (
-          <NavLink key={key} to={`/${key}`} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+          <NavLink key={key} to={`/${key}`} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} onClick={onNavigate}>
             <span className="nav-icon">{m.icon}</span> {m.label}
           </NavLink>
         ))}
@@ -52,9 +78,51 @@ function Sidebar() {
 }
 
 export default function App() {
+  const compact = useCompactLayout();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    document.body.classList.toggle('menu-lock', compact && menuOpen);
+    return () => document.body.classList.remove('menu-lock');
+  }, [compact, menuOpen]);
+
+  const shellClass = [
+    'app-shell',
+    compact ? 'compact' : '',
+    menuOpen ? 'menu-open' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className="app-shell">
-      <Sidebar />
+    <div className={shellClass}>
+      {compact && (
+        <header className="mobile-header">
+          <button
+            type="button"
+            className="menu-toggle"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
+          <span className="mobile-title">{pageTitle(location.pathname)}</span>
+        </header>
+      )}
+      {compact && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Close menu"
+          tabIndex={menuOpen ? 0 : -1}
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+      <Sidebar onNavigate={() => setMenuOpen(false)} />
       <main className="main">
         <Routes>
           <Route path="/" element={<HomeView />} />
