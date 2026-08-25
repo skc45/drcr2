@@ -21,6 +21,8 @@ It runs as a **website** and as a **native Android app**. On Android, posts live
 
 The Android build is a Capacitor wrapper around the same React UI (`com.skc45.drcr2`). Navigation uses a drawer, and the posting API is stored in on-device `localStorage`.
 
+**Direct APK download:** [releases/DRCR2-debug.apk](https://github.com/skc45/drcr2/raw/cursor/android-app-0ace/releases/DRCR2-debug.apk)
+
 ### Build a debug APK
 
 Requires JDK 21 and the Android SDK (or Android Studio).
