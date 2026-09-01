@@ -12,7 +12,7 @@ generateToken('+')  // Token<'+'>  →  {"type":"op","value":"+"}
 npm run apk
 ```
 
-Writes `releases/drcr2.apk` (`com.skc45.drcr2`). Tap `+ - * /` to generate `{"type":"op","value":"+"}`.
+Writes `releases/drcr2.apk` (`com.skc45.drcr2`). Salmon swim the river; tap `+ - * /` to generate `{"type":"op","value":"+"}`.
 
 Install:
 

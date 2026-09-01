@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.DRCR2" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">#6EE7B7</item>
-        <item name="android:statusBarColor">#07080C</item>
-        <item name="android:navigationBarColor">#07080C</item>
-        <item name="android:windowBackground">#07080C</item>
+        <item name="colorPrimary">#E07A5F</item>
+        <item name="colorOnPrimary">#1A120C</item>
+        <item name="android:statusBarColor">#08323C</item>
+        <item name="android:navigationBarColor">#082832</item>
+        <item name="android:windowBackground">#08323C</item>
+    </style>
+
+    <style name="Widget.DRCR2.Op" parent="Widget.Material3.Button">
+        <item name="backgroundTint">#E07A5F</item>
+        <item name="android:textColor">#1A120C</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">18dp</item>
     </style>
 </resources>
