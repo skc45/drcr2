@@ -1,16 +1,15 @@
 # DRCR2
 
-Typed token generation. That is the whole project.
+The type.
 
 ```ts
-type Token<V extends Op> = { readonly type: 'op'; readonly value: V };
-
-generateToken('+')  // Token<'+'>
-generateTokens()    // { '+': Token<'+'>, '-': Token<'-'>, '*': Token<'*'>, '/': Token<'/'> }
+type Token<V extends Op = Op> = {
+  readonly type: 'op';
+  readonly value: V;
+};
 ```
 
 ```bash
 npm install
 npm run typecheck
-npm test
 ```
