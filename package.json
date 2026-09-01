@@ -8,7 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/math/engine.test.ts"
+    "test": "tsx --test src/token.test.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
