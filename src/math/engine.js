@@ -441,6 +441,26 @@ function freeVars(ast, into = new Set()) {
   return into;
 }
 
+function formatCoeff(coef, sym) {
+  const mag = trimFloat(Math.abs(coef));
+  if (sym) return mag === '1' ? sym : `${mag}${sym}`;
+  return mag;
+}
+
+function formatPoly(a, b, c) {
+  const parts = [];
+  const push = (coef, sym) => {
+    if (Math.abs(coef) < 1e-12) return;
+    const core = formatCoeff(coef, sym);
+    if (!parts.length) parts.push(coef < 0 ? `−${core}` : core);
+    else parts.push(coef < 0 ? `− ${core}` : `+ ${core}`);
+  };
+  push(a, 'x²');
+  push(b, 'x');
+  push(c, '');
+  return `${parts.join(' ') || '0'} = 0`;
+}
+
 function solvePolynomial(f, steps) {
   const y = (x) => f(x);
   const y0 = y(0);
@@ -465,13 +485,13 @@ function solvePolynomial(f, steps) {
 
   if (Math.abs(a) < 1e-10) {
     const root = -c / b;
-    steps.push(`linear: ${trimFloat(b)}x + ${trimFloat(c)} = 0`);
+    steps.push(`linear: ${formatPoly(0, b, c)}`);
     steps.push(`x = ${formatNumber(root)}`);
     return { kind: 'linear', roots: [root], coeffs: { a: 0, b, c } };
   }
 
   const disc = b * b - 4 * a * c;
-  steps.push(`quadratic: ${trimFloat(a)}x² + ${trimFloat(b)}x + ${trimFloat(c)} = 0`);
+  steps.push(`quadratic: ${formatPoly(a, b, c)}`);
   steps.push(`discriminant Δ = b² − 4ac = ${formatNumber(disc)}`);
   if (disc < -1e-10) {
     const re = -b / (2 * a);
