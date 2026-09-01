@@ -1,62 +1,27 @@
-# DRCR2 Messaging App
+# DRCR2 Expire
 
-A messaging platform with **8 separate posting methods**, each with its own behavior and UI.
+A from-scratch rebuild. The old eight-method board is gone.
 
-## Posting Methods
+This is an **auto-expiring notebook** with a **smart math engine**. Drop a note, pick a lifetime, and it deletes itself. If the text looks like math, the engine parses it (no `eval`), evaluates or solves it, and keeps the steps with the note until the timer hits zero.
 
-| Method | Purpose |
-|--------|---------|
-| **Trash** | Ephemeral posts with auto-expiry; deleted content lands here |
-| **Board** | Classic threaded discussions organized by board |
-| **Catalog** | Visual grid overview of threads |
-| **Feed** | Live timeline of recent activity |
-| **Mail** | Private direct messages between users |
-| **Article** | Long-form posts with titles |
-| **Overboard** | Aggregated recent posts from all boards |
-| **Hall of Fame** | Featured and highly upvoted posts |
+## Math it can do
 
-## Quick Start
+- Arithmetic, powers, factorial, percents (`15% of 80`, `20% * 50`)
+- Functions: `sin`, `cos`, `sqrt`, `log`, `ncr`, …
+- Degrees: `sin(30deg)`
+- Implicit multiply: `2(3+4)`, `2pi`
+- Linear & quadratic solve: `2x+5=17`, `x^2-5x+6=0`
+- Units: `5 km in miles`, `32 f to c`
+- Worded input: `what is 2 plus 2`
+
+## Run
 
 ```bash
-npm run install:all
+npm install
+npm test
 npm run dev
 ```
 
-- **Frontend:** http://localhost:5173
-- **API:** http://localhost:3001
+Open http://localhost:5173
 
-Set your display name in the sidebar. Posts are stored in `server/data.json`.
-
-## Stack
-
-- React + Vite (client)
-- Express + JSON file store (server)
-
-## Deploy to the Internet
-
-### Option A — Render (permanent, free)
-
-1. Push is already on GitHub: [github.com/skc45/drcr2](https://github.com/skc45/drcr2)
-2. Open [Render one-click deploy](https://render.com/deploy?repo=https://github.com/skc45/drcr2)
-3. Sign in with GitHub and click **Apply** — Render reads `render.yaml` and deploys automatically.
-
-Your app will get a URL like `https://drcr2.onrender.com`.
-
-### Option B — Docker
-
-```bash
-docker build -t drcr2 .
-docker run -p 3001:3001 drcr2
-```
-
-### Option C — Local tunnel (temporary)
-
-While the server runs locally:
-
-```bash
-npm run build
-npm start
-npx localtunnel --port 3001
-```
-
-Note: free Render instances spin down after inactivity; the first request may take ~30s to wake up. Post data on Render uses ephemeral disk and resets on redeploy.
+Notes live in `localStorage` and are swept out the moment they expire. Add to your Android home screen from the browser for an app-like install (PWA).

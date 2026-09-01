@@ -1,0 +1,11 @@
+{
+  "name": "DRCR2 Expire",
+  "short_name": "Expire",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07080c",
+  "theme_color": "#07080c",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
