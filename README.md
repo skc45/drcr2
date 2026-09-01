@@ -6,6 +6,22 @@ Typed token generation, usable from an exe.
 generateToken('+')  // Token<'+'>  →  {"type":"op","value":"+"}
 ```
 
+## APK
+
+```bash
+npm run apk
+```
+
+Writes `releases/drcr2.apk` (`com.skc45.drcr2`). Tap `+ - * /` to generate `{"type":"op","value":"+"}`.
+
+Install:
+
+```bash
+adb install -r releases/drcr2.apk
+```
+
+Direct download: https://github.com/skc45/drcr2/raw/cursor/expire-math-rebuild-0ace/releases/drcr2.apk
+
 ## Exe
 
 ```bash

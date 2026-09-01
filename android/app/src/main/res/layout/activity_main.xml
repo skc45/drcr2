@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#07080C"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:letterSpacing="0.12"
+        android:text="@string/kicker"
+        android:textAllCaps="true"
+        android:textColor="#6EE7B7"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/title"
+        android:textColor="#E8EAEF"
+        android:textSize="40sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/lede"
+        android:textColor="#8B93A8"
+        android:textSize="16sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <Button android:id="@+id/opPlus" android:layout_width="0dp" android:layout_height="56dp" android:layout_margin="4dp" android:layout_weight="1" android:text="+" android:textSize="22sp" />
+        <Button android:id="@+id/opMinus" android:layout_width="0dp" android:layout_height="56dp" android:layout_margin="4dp" android:layout_weight="1" android:text="−" android:textSize="22sp" />
+        <Button android:id="@+id/opStar" android:layout_width="0dp" android:layout_height="56dp" android:layout_margin="4dp" android:layout_weight="1" android:text="*" android:textSize="22sp" />
+        <Button android:id="@+id/opSlash" android:layout_width="0dp" android:layout_height="56dp" android:layout_margin="4dp" android:layout_weight="1" android:text="/" android:textSize="22sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tokenOut"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:background="#12141C"
+        android:fontFamily="monospace"
+        android:padding="18dp"
+        android:textColor="#6EE7B7"
+        android:textSize="18sp" />
+</LinearLayout>

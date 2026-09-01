@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DRCR2</string>
+    <string name="kicker">DRCR2</string>
+    <string name="title">op</string>
+    <string name="lede">Tap an operator. That generates a token.</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DRCR2" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#6EE7B7</item>
+        <item name="android:statusBarColor">#07080C</item>
+        <item name="android:navigationBarColor">#07080C</item>
+        <item name="android:windowBackground">#07080C</item>
+    </style>
+</resources>

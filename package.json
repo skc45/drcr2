@@ -8,7 +8,8 @@
     "test": "tsx --test src/token.test.ts && go test ./cmd/drcr2",
     "cli": "tsx src/cli.ts",
     "build": "tsc --noEmit && npm run exe",
-    "exe": "mkdir -p releases && go build -trimpath -ldflags=-s -o releases/drcr2 ./cmd/drcr2 && GOOS=windows GOARCH=amd64 go build -trimpath -ldflags=-s -o releases/drcr2.exe ./cmd/drcr2"
+    "exe": "mkdir -p releases && go build -trimpath -ldflags=-s -o releases/drcr2 ./cmd/drcr2 && GOOS=windows GOARCH=amd64 go build -trimpath -ldflags=-s -o releases/drcr2.exe ./cmd/drcr2",
+    "apk": "cd android && ./gradlew assembleDebug --no-daemon && mkdir -p ../releases && cp -f app/build/outputs/apk/debug/app-debug.apk ../releases/drcr2.apk"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
