@@ -1,15 +1,20 @@
-import { useMemo, useState } from 'react';
-import { smartMath } from './math/engine.js';
+import { useMemo, useState, type FormEvent } from 'react';
+import { smartMath, type MathResult } from './math/engine';
 
-const EXAMPLES = ['5 km in miles', 'what is 2 plus 2'];
+const EXAMPLES = ['5 km in miles', 'what is 2 plus 2'] as const;
+type Example = (typeof EXAMPLES)[number];
 
 export default function App() {
-  const [body, setBody] = useState('');
+  const [body, setBody] = useState<string>('');
 
-  const preview = useMemo(() => {
-    if (!body.trim()) return null;
+  const preview: MathResult | null = useMemo(() => {
+    if (body.trim() === '') return null;
     return smartMath(body);
   }, [body]);
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+  }
 
   return (
     <div className="shell">
@@ -20,14 +25,14 @@ export default function App() {
       </header>
 
       <div className="examples">
-        {EXAMPLES.map((ex) => (
+        {EXAMPLES.map((ex: Example) => (
           <button key={ex} type="button" className="pill" onClick={() => setBody(ex)}>
             {ex}
           </button>
         ))}
       </div>
 
-      <form className="composer" onSubmit={(e) => e.preventDefault()}>
+      <form className="composer" onSubmit={onSubmit}>
         <label className="sr-only" htmlFor="ask">Question</label>
         <textarea
           id="ask"
@@ -36,10 +41,10 @@ export default function App() {
           placeholder="5 km in miles   ·   what is 2 plus 2"
           rows={3}
         />
-        {preview?.ok && (
+        {preview?.ok === true && (
           <div className="math-preview ok">
             <div className="math-result">{preview.result}</div>
-            {preview.steps?.length > 0 && (
+            {preview.steps.length > 0 && (
               <ol>
                 {preview.steps.map((s) => (
                   <li key={s}>{s}</li>
@@ -48,7 +53,7 @@ export default function App() {
             )}
           </div>
         )}
-        {preview && !preview.ok && body.trim() && (
+        {preview?.ok === false && body.trim() !== '' && (
           <div className="math-preview err">{preview.error}</div>
         )}
       </form>

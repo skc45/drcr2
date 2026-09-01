@@ -7,8 +7,11 @@ Two questions. That’s the whole app.
 
 Everything else (boards, expire notes, algebra, trig, percents) is gone.
 
+Strict TypeScript (`tsc --noEmit`) is part of `npm test` / `npm run build`.
+
 ```bash
 npm install
+npm run typecheck
 npm test
 npm run dev
 ```
