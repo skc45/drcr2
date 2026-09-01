@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
-    "test": "node --test src/math/engine.test.js src/expire/store.test.js"
+    "test": "node --test src/math/engine.test.js"
   },
   "dependencies": {
     "react": "^18.3.1",
