@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DRCR2</string>
-    <string name="kicker">salmon run</string>
+    <string name="kicker">tuna strike</string>
     <string name="title">swim an op</string>
-    <string name="lede">The salmon keep moving. Tap an operator and a token is born upstream.</string>
+    <string name="lede">+ from the top. − from the bottom. * from the left. / from the right. Salmon scatter when tuna hit the river.</string>
 </resources>

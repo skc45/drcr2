@@ -11,16 +11,18 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val out = findViewById<TextView>(R.id.tokenOut)
-        fun show(op: String) {
+        val river = findViewById<SalmonRunView>(R.id.salmonRun)
+        fun show(op: String, attack: Boolean) {
             val token = generateToken(op) ?: return
             out.text = token.toJson()
+            if (attack) river.launchTuna(op)
         }
 
-        findViewById<Button>(R.id.opPlus).setOnClickListener { show("+") }
-        findViewById<Button>(R.id.opMinus).setOnClickListener { show("-") }
-        findViewById<Button>(R.id.opStar).setOnClickListener { show("*") }
-        findViewById<Button>(R.id.opSlash).setOnClickListener { show("/") }
+        findViewById<Button>(R.id.opPlus).setOnClickListener { show("+", attack = true) }
+        findViewById<Button>(R.id.opMinus).setOnClickListener { show("-", attack = true) }
+        findViewById<Button>(R.id.opStar).setOnClickListener { show("*", attack = true) }
+        findViewById<Button>(R.id.opSlash).setOnClickListener { show("/", attack = true) }
 
-        show("+")
+        show("+", attack = false)
     }
 }
