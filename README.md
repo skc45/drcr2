@@ -1,16 +1,16 @@
 # DRCR2
 
-One token. It is an **op**.
+Typed token generation. That is the whole project.
 
 ```ts
-type Token = { type: 'op'; value: '+' | '-' | '*' | '/' };
-```
+type Token<V extends Op> = { readonly type: 'op'; readonly value: V };
 
-`+`, `-`, `*`, `/` — or the words plus, minus, times, divided.
+generateToken('+')  // Token<'+'>
+generateTokens()    // { '+': Token<'+'>, '-': Token<'-'>, '*': Token<'*'>, '/': Token<'/'> }
+```
 
 ```bash
 npm install
 npm run typecheck
 npm test
-npm run dev
 ```
