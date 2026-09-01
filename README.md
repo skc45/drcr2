@@ -1,16 +1,39 @@
 # DRCR2
 
-Typed token generation. That is the whole project.
+Typed token generation, usable from an exe.
 
 ```ts
-type Token<V extends Op> = { readonly type: 'op'; readonly value: V };
-
-generateToken('+')  // Token<'+'>
-generateTokens()    // { '+': Token<'+'>, '-': Token<'-'>, '*': Token<'*'>, '/': Token<'/'> }
+generateToken('+')  // Token<'+'>  →  {"type":"op","value":"+"}
 ```
+
+## Exe
+
+```bash
+npm run exe
+```
+
+Writes:
+
+- `releases/drcr2` — Linux
+- `releases/drcr2.exe` — Windows
+
+Call it from another program (stdout is one JSON line):
+
+```bat
+drcr2.exe +
+```
+
+```
+{"type":"op","value":"+"}
+```
+
+No args prints every op. Exit `2` if the argument is not `+ - * /`.
+
+## Source
 
 ```bash
 npm install
 npm run typecheck
 npm test
+npm run cli -- +
 ```

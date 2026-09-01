@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/token.test.ts",
-    "build": "tsc --noEmit"
+    "test": "tsx --test src/token.test.ts && go test ./cmd/drcr2",
+    "cli": "tsx src/cli.ts",
+    "build": "tsc --noEmit && npm run exe",
+    "exe": "mkdir -p releases && go build -trimpath -ldflags=-s -o releases/drcr2 ./cmd/drcr2 && GOOS=windows GOARCH=amd64 go build -trimpath -ldflags=-s -o releases/drcr2.exe ./cmd/drcr2"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

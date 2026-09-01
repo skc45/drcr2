@@ -14,6 +14,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
       - run: npm install
       - run: npm run typecheck
       - run: npm test
+      - run: npm run exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drcr2-exe
+          path: |
+            releases/drcr2
+            releases/drcr2.exe
