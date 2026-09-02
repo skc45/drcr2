@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DRCR2</string>
-    <string name="kicker">tuna strike</string>
+    <string name="kicker">salmon at war</string>
     <string name="title">swim an op</string>
-    <string name="lede">+ from the top. − from the bottom. * from the left. / from the right. Salmon scatter when tuna hit the river.</string>
+    <string name="lede">Back-mounted artillery auto-fires, slow and steady, then reloads. Tap + − * / and tuna attack from that edge.</string>
 </resources>

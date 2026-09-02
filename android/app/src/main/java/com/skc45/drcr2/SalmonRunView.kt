@@ -5,9 +5,11 @@ import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
+import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -31,6 +33,10 @@ class SalmonRunView @JvmOverloads constructor(
         val bob: Float,
         val phase: Float,
         var panic: Float,
+        var gunAngle: Float,
+        var reload: Float,
+        val reloadTime: Float,
+        var recoil: Float,
     )
 
     private data class Bubble(
@@ -57,6 +63,21 @@ class SalmonRunView @JvmOverloads constructor(
         var age: Float,
     )
 
+    private data class Shell(
+        var x: Float,
+        var y: Float,
+        var vx: Float,
+        var vy: Float,
+        var life: Float,
+    )
+
+    private data class Flash(
+        var x: Float,
+        var y: Float,
+        var angle: Float,
+        var age: Float,
+    )
+
     private val waterPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val gleamPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -76,12 +97,29 @@ class SalmonRunView @JvmOverloads constructor(
     }
     private val wakePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val finPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val steelPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val brassPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val shellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val flashPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3.2f
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val ringBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3.2f
+        color = 0x33211610.toInt()
+    }
 
     private val fish = Path()
+    private val ringBox = RectF()
     private val salmon = mutableListOf<Salmon>()
     private val bubbles = mutableListOf<Bubble>()
     private val tuna = mutableListOf<Tuna>()
     private val wakes = mutableListOf<Wake>()
+    private val shells = mutableListOf<Shell>()
+    private val flashes = mutableListOf<Flash>()
     private val rng = java.util.Random()
     private var running = false
     private var lastNs = 0L
@@ -192,10 +230,14 @@ class SalmonRunView @JvmOverloads constructor(
         bubbles.clear()
         tuna.clear()
         wakes.clear()
+        shells.clear()
+        flashes.clear()
         if (w <= 0f || h <= 0f) return
         val seedRng = java.util.Random(7)
         repeat(7) {
             val cruise = 48f + seedRng.nextFloat() * 90f
+            val facingRight = seedRng.nextBoolean()
+            val reloadTime = 2.7f + seedRng.nextFloat() * 0.9f
             salmon += Salmon(
                 x = seedRng.nextFloat() * w,
                 y = h * (0.18f + seedRng.nextFloat() * 0.64f),
@@ -203,10 +245,14 @@ class SalmonRunView @JvmOverloads constructor(
                 cruise = cruise,
                 scale = 0.7f + seedRng.nextFloat() * 0.7f,
                 hueShift = seedRng.nextFloat(),
-                facingRight = seedRng.nextBoolean(),
+                facingRight = facingRight,
                 bob = 10f + seedRng.nextFloat() * 16f,
                 phase = seedRng.nextFloat() * 6.28f,
                 panic = 0f,
+                gunAngle = if (facingRight) 0f else PI.toFloat(),
+                reload = seedRng.nextFloat() * reloadTime,
+                reloadTime = reloadTime,
+                recoil = 0f,
             )
         }
         repeat(18) {
@@ -226,6 +272,7 @@ class SalmonRunView @JvmOverloads constructor(
         val t = SystemClockSeconds()
         stepTuna(dt, w, h)
         stepWakes(dt)
+        stepArtillery(dt, t, w, h)
         for (s in salmon) {
             fleeFromTuna(s)
             val dir = if (s.facingRight) 1f else -1f
@@ -252,6 +299,87 @@ class SalmonRunView @JvmOverloads constructor(
                 b.x = (b.x % w + w) % w
             }
         }
+    }
+
+    private fun stepArtillery(dt: Float, t: Float, w: Float, h: Float) {
+        for (s in salmon) {
+            val aim = aimPoint(s)
+            s.gunAngle = lerpAngle(s.gunAngle, atan2(aim.second - salmonWorldY(s, t), aim.first - s.x), (1.6f * dt).coerceIn(0f, 1f))
+            s.recoil = (s.recoil - dt * 2.8f).coerceAtLeast(0f)
+            s.reload -= dt
+            if (s.reload <= 0f) {
+                fire(s, t)
+                s.reload = s.reloadTime
+            }
+        }
+        val shellIt = shells.iterator()
+        while (shellIt.hasNext()) {
+            val shot = shellIt.next()
+            shot.x += shot.vx * dt
+            shot.y += shot.vy * dt
+            shot.life -= dt
+            var hit = false
+            val tunaIt = tuna.iterator()
+            while (tunaIt.hasNext()) {
+                val hunter = tunaIt.next()
+                if (hypot(hunter.x - shot.x, hunter.y - shot.y) < 28f * hunter.scale) {
+                    hunter.life -= 1.8f
+                    hunter.vx += shot.vx * 0.18f
+                    hunter.vy += shot.vy * 0.18f
+                    flashes += Flash(shot.x, shot.y, atan2(shot.vy, shot.vx), 0f)
+                    if (hunter.life <= 0f) tunaIt.remove()
+                    hit = true
+                    break
+                }
+            }
+            if (hit || shot.life <= 0f || shot.x < -40f || shot.x > w + 40f || shot.y < -40f || shot.y > h + 40f) {
+                shellIt.remove()
+            }
+        }
+        val flashIt = flashes.iterator()
+        while (flashIt.hasNext()) {
+            val flash = flashIt.next()
+            flash.age += dt
+            if (flash.age > 0.22f) flashIt.remove()
+        }
+    }
+
+    private fun fire(s: Salmon, t: Float) {
+        val y = salmonWorldY(s, t)
+        val reach = (36f - s.recoil * 10f) * s.scale
+        val mx = s.x + cos(s.gunAngle) * reach
+        val my = y + sin(s.gunAngle) * reach
+        val speed = 240f
+        shells += Shell(mx, my, cos(s.gunAngle) * speed, sin(s.gunAngle) * speed, 2.4f)
+        flashes += Flash(mx, my, s.gunAngle, 0f)
+        s.recoil = 1f
+    }
+
+    private fun aimPoint(s: Salmon): Pair<Float, Float> {
+        var best: Tuna? = null
+        var nearest = Float.MAX_VALUE
+        for (hunter in tuna) {
+            val d = hypot(hunter.x - s.x, hunter.y - s.y)
+            if (d < nearest) {
+                nearest = d
+                best = hunter
+            }
+        }
+        if (best != null) return Pair(best.x, best.y)
+        val ahead = if (s.facingRight) 180f else -180f
+        return Pair(s.x + ahead, s.y)
+    }
+
+    private fun salmonWorldY(s: Salmon, t: Float): Float =
+        s.y + sin(t * 2.2f + s.phase) * s.bob
+
+    private fun lerpAngle(from: Float, to: Float, amount: Float): Float {
+        var delta = to - from
+        val half = PI.toFloat()
+        val tau = half * 2f
+        while (delta > half) delta -= tau
+        while (delta < -half) delta += tau
+        return from + delta * amount
     }
 
     private fun stepWakes(dt: Float) {
@@ -312,9 +440,9 @@ class SalmonRunView @JvmOverloads constructor(
                 awayX = s.x - hunter.x
             }
         }
-        if (nearest < 130f) {
-            s.panic = 0.7f
-            s.speed = s.cruise * 2.4f
+        if (nearest < 70f) {
+            s.panic = 0.45f
+            s.speed = s.cruise * 1.8f
             if (awayX != 0f) s.facingRight = awayX > 0f
         }
     }
@@ -332,6 +460,8 @@ class SalmonRunView @JvmOverloads constructor(
         val t = SystemClockSeconds()
         for (s in salmon) drawSalmon(canvas, s, t)
         for (hunter in tuna) drawTuna(canvas, hunter, t)
+        for (shot in shells) drawShell(canvas, shot)
+        for (flash in flashes) drawFlash(canvas, flash)
         canvas.restore()
     }
 
@@ -374,8 +504,9 @@ class SalmonRunView @JvmOverloads constructor(
         bellyPaint.color = belly
         accentPaint.color = 0xFFD4573C.toInt()
 
+        val worldY = salmonWorldY(s, t)
         canvas.save()
-        canvas.translate(s.x, s.y + sin(t * 2.2f + s.phase) * s.bob)
+        canvas.translate(s.x, worldY)
         if (!s.facingRight) canvas.scale(-1f, 1f)
         canvas.scale(s.scale, s.scale)
 
@@ -408,6 +539,101 @@ class SalmonRunView @JvmOverloads constructor(
         canvas.drawPath(fish, accentPaint)
 
         canvas.drawCircle(34f, -4f, 3.4f, eyePaint)
+        canvas.restore()
+        drawArtillery(canvas, s, worldY)
+    }
+
+    private fun drawArtillery(canvas: Canvas, s: Salmon, worldY: Float) {
+        val spent = (1f - s.reload / s.reloadTime).coerceIn(0f, 1f)
+        val bolt = when {
+            spent < 0.12f -> 0f
+            spent < 0.40f -> (spent - 0.12f) / 0.28f
+            spent < 0.70f -> 1f
+            spent < 0.88f -> 1f - (spent - 0.70f) / 0.18f
+            else -> 0f
+        }
+        val feed = when {
+            spent < 0.28f -> 0f
+            spent < 0.62f -> (spent - 0.28f) / 0.34f
+            spent < 0.84f -> 1f
+            else -> 0f
+        }
+        val hatch = when {
+            spent < 0.16f -> spent / 0.16f
+            spent < 0.78f -> 1f
+            else -> (1f - (spent - 0.78f) / 0.22f).coerceAtLeast(0f)
+        }
+
+        steelPaint.color = 0xFF3A4650.toInt()
+        brassPaint.color = 0xFFC4A15A.toInt()
+        shellPaint.color = 0xFFD4B06A.toInt()
+
+        canvas.save()
+        canvas.translate(s.x, worldY)
+        canvas.scale(s.scale, s.scale)
+
+        fish.reset()
+        fish.moveTo(-16f, -6f)
+        fish.lineTo(14f, -8f)
+        fish.lineTo(16f, 2f)
+        fish.lineTo(-18f, 4f)
+        fish.close()
+        canvas.drawPath(fish, steelPaint)
+        canvas.drawRect(-10f, 2f, 10f, 7f, brassPaint)
+
+        canvas.save()
+        canvas.rotate(Math.toDegrees(s.gunAngle.toDouble()).toFloat())
+
+        val kick = s.recoil * 9f
+        canvas.drawRoundRect(-18f - kick, -7f, 8f - kick, 7f, 3f, 3f, steelPaint)
+        canvas.drawRoundRect(4f - kick, -4.2f, 34f - kick, 4.2f, 2.2f, 2.2f, steelPaint)
+        canvas.drawCircle(-8f - kick, 0f, 6.5f, brassPaint)
+
+        val boltX = -14f - kick - bolt * 12f
+        canvas.drawRoundRect(boltX - 7f, -3.2f, boltX + 5f, 3.2f, 1.6f, 1.6f, brassPaint)
+        canvas.drawCircle(boltX - 7f, 0f, 3.4f, steelPaint)
+
+        canvas.save()
+        canvas.rotate(-42f * hatch)
+        canvas.drawRoundRect(-6f - kick, -11f, 6f - kick, -6f, 1.4f, 1.4f, brassPaint)
+        canvas.restore()
+
+        if (feed > 0f) {
+            val sy = 10f - feed * 12f
+            canvas.drawRoundRect(-4f - kick, sy - 3f, 6f - kick, sy + 3f, 1.5f, 1.5f, shellPaint)
+        }
+
+        ringBgPaint.strokeWidth = 2.6f
+        ringPaint.strokeWidth = 2.6f
+        ringPaint.color = 0xFFE8C56A.toInt()
+        ringBox.set(-22f, -22f, 8f, 8f)
+        canvas.drawArc(ringBox, -90f, 360f, false, ringBgPaint)
+        canvas.drawArc(ringBox, -90f, 360f * spent, false, ringPaint)
+        canvas.restore()
+        canvas.restore()
+    }
+
+    private fun drawShell(canvas: Canvas, shot: Shell) {
+        val angle = Math.toDegrees(atan2(shot.vy, shot.vx).toDouble()).toFloat()
+        canvas.save()
+        canvas.translate(shot.x, shot.y)
+        canvas.rotate(angle)
+        shellPaint.color = 0xFFE6C36A.toInt()
+        canvas.drawRoundRect(-8f, -3.1f, 8f, 3.1f, 2f, 2f, shellPaint)
+        steelPaint.color = 0xFF2C353C.toInt()
+        canvas.drawCircle(7.2f, 0f, 2.6f, steelPaint)
+        canvas.restore()
+    }
+
+    private fun drawFlash(canvas: Canvas, flash: Flash) {
+        val fade = (1f - flash.age / 0.22f).coerceIn(0f, 1f)
+        canvas.save()
+        canvas.translate(flash.x, flash.y)
+        canvas.rotate(Math.toDegrees(flash.angle.toDouble()).toFloat())
+        flashPaint.color = (0x00FFC14A or ((0xEE * fade).toInt() shl 24))
+        canvas.drawCircle(6f, 0f, 10f * fade + 4f, flashPaint)
+        flashPaint.color = (0x00FFF4C8 or ((0xCC * fade).toInt() shl 24))
+        canvas.drawCircle(12f, 0f, 5f * fade + 2f, flashPaint)
         canvas.restore()
     }
 
