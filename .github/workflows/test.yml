@@ -1,0 +1,36 @@
+name: Test
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run exe
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm run apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: drcr2-binaries
+          path: |
+            releases/drcr2
+            releases/drcr2.exe
+            releases/drcr2.apk

@@ -1,21 +1,19 @@
 {
   "name": "drcr2",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:server": "node server/index.js",
-    "dev:client": "npm run dev --prefix client",
-    "install:all": "npm install && npm install --prefix client",
-    "build": "npm run build --prefix client",
-    "start": "node server/index.js"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "uuid": "^11.0.3"
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/token.test.ts && go test ./cmd/drcr2",
+    "cli": "tsx src/cli.ts",
+    "build": "tsc --noEmit && npm run exe",
+    "exe": "mkdir -p releases && go build -trimpath -ldflags=-s -o releases/drcr2 ./cmd/drcr2 && GOOS=windows GOARCH=amd64 go build -trimpath -ldflags=-s -o releases/drcr2.exe ./cmd/drcr2",
+    "apk": "cd android && ./gradlew assembleDebug --no-daemon && mkdir -p ../releases && cp -f app/build/outputs/apk/debug/app-debug.apk ../releases/drcr2.apk"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }
