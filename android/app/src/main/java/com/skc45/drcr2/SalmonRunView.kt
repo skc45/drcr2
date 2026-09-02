@@ -37,6 +37,9 @@ class SalmonRunView @JvmOverloads constructor(
         var reload: Float,
         val reloadTime: Float,
         var recoil: Float,
+        var dead: Boolean,
+        var respawn: Float,
+        var fade: Float,
     )
 
     private data class Bubble(
@@ -78,6 +81,12 @@ class SalmonRunView @JvmOverloads constructor(
         var age: Float,
     )
 
+    private data class Nuke(
+        var x: Float,
+        var y: Float,
+        var age: Float,
+    )
+
     private val waterPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val gleamPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -111,6 +120,9 @@ class SalmonRunView @JvmOverloads constructor(
         strokeWidth = 3.2f
         color = 0x33211610.toInt()
     }
+    private val vestPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val nukePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val hazardPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     private val fish = Path()
     private val ringBox = RectF()
@@ -120,6 +132,7 @@ class SalmonRunView @JvmOverloads constructor(
     private val wakes = mutableListOf<Wake>()
     private val shells = mutableListOf<Shell>()
     private val flashes = mutableListOf<Flash>()
+    private val nukes = mutableListOf<Nuke>()
     private val rng = java.util.Random()
     private var running = false
     private var lastNs = 0L
@@ -232,6 +245,7 @@ class SalmonRunView @JvmOverloads constructor(
         wakes.clear()
         shells.clear()
         flashes.clear()
+        nukes.clear()
         if (w <= 0f || h <= 0f) return
         val seedRng = java.util.Random(7)
         repeat(7) {
@@ -253,6 +267,9 @@ class SalmonRunView @JvmOverloads constructor(
                 reload = seedRng.nextFloat() * reloadTime,
                 reloadTime = reloadTime,
                 recoil = 0f,
+                dead = false,
+                respawn = 0f,
+                fade = 1f,
             )
         }
         repeat(18) {
@@ -272,8 +289,17 @@ class SalmonRunView @JvmOverloads constructor(
         val t = SystemClockSeconds()
         stepTuna(dt, w, h)
         stepWakes(dt)
+        stepNukes(dt)
         stepArtillery(dt, t, w, h)
         for (s in salmon) {
+            if (s.dead) {
+                s.fade = (s.fade - dt * 2.4f).coerceAtLeast(0f)
+                s.y += 46f * dt
+                s.respawn -= dt
+                if (s.respawn <= 0f) respawnSalmon(s, w, h)
+                continue
+            }
+            s.fade = (s.fade + dt * 2.8f).coerceAtMost(1f)
             fleeFromTuna(s)
             val dir = if (s.facingRight) 1f else -1f
             val rush = if (s.panic > 0f) 2.6f else 1f
@@ -303,6 +329,7 @@ class SalmonRunView @JvmOverloads constructor(
 
     private fun stepArtillery(dt: Float, t: Float, w: Float, h: Float) {
         for (s in salmon) {
+            if (s.dead) continue
             val aim = aimPoint(s)
             s.gunAngle = lerpAngle(s.gunAngle, atan2(aim.second - salmonWorldY(s, t), aim.first - s.x), (1.6f * dt).coerceIn(0f, 1f))
             s.recoil = (s.recoil - dt * 2.8f).coerceAtLeast(0f)
@@ -327,7 +354,10 @@ class SalmonRunView @JvmOverloads constructor(
                     hunter.vx += shot.vx * 0.18f
                     hunter.vy += shot.vy * 0.18f
                     flashes += Flash(shot.x, shot.y, atan2(shot.vy, shot.vx), 0f)
-                    if (hunter.life <= 0f) tunaIt.remove()
+                    if (hunter.life <= 0f) {
+                        detonate(hunter)
+                        tunaIt.remove()
+                    }
                     hit = true
                     break
                 }
@@ -396,17 +426,89 @@ class SalmonRunView @JvmOverloads constructor(
         while (it.hasNext()) {
             val hunter = it.next()
             hunter.life -= dt
-            val hunting = hunter.life > 1.15f
-            if (hunting && salmon.isNotEmpty()) {
-                val prey = salmon[hunter.target % salmon.size]
-                steerToward(hunter, prey.x, prey.y, 320f, dt)
+            val prey = livingSalmon(hunter.target)
+            if (prey != null) {
+                steerToward(hunter, prey.x, prey.y, 360f, dt)
+                if (hypot(hunter.x - prey.x, hunter.y - prey.y) < 56f) {
+                    detonate(hunter)
+                    it.remove()
+                    continue
+                }
             } else {
-                val exit = exitPoint(hunter.edge, w, h)
-                steerToward(hunter, exit.first, exit.second, 380f, dt)
+                steerToward(hunter, w * 0.5f, h * 0.45f, 300f, dt)
             }
             hunter.x += hunter.vx * dt
             hunter.y += hunter.vy * dt
-            if (hunter.life <= 0f || offRiver(hunter, w, h)) it.remove()
+            if (hunter.life <= 0f) {
+                detonate(hunter)
+                it.remove()
+            } else if (offRiver(hunter, w, h)) {
+                it.remove()
+            }
+        }
+    }
+
+    private fun livingSalmon(preferred: Int): Salmon? {
+        if (salmon.isEmpty()) return null
+        val start = ((preferred % salmon.size) + salmon.size) % salmon.size
+        for (i in salmon.indices) {
+            val s = salmon[(start + i) % salmon.size]
+            if (!s.dead) return s
+        }
+        return null
+    }
+
+    private fun killSalmon(s: Salmon) {
+        if (s.dead) return
+        s.dead = true
+        s.respawn = 1.5f + rng.nextFloat() * 1.1f
+        s.recoil = 0f
+    }
+
+    private fun respawnSalmon(s: Salmon, w: Float, h: Float) {
+        s.dead = false
+        s.fade = 0f
+        s.panic = 0f
+        s.speed = s.cruise
+        s.reload = s.reloadTime * 0.35f
+        s.recoil = 0f
+        s.facingRight = rng.nextBoolean()
+        s.gunAngle = if (s.facingRight) 0f else PI.toFloat()
+        when (rng.nextInt(4)) {
+            0 -> {
+                s.x = rng.nextFloat() * w
+                s.y = -36f
+            }
+            1 -> {
+                s.x = rng.nextFloat() * w
+                s.y = h + 36f
+            }
+            2 -> {
+                s.x = -40f
+                s.y = h * (0.18f + rng.nextFloat() * 0.56f)
+                s.facingRight = true
+            }
+            else -> {
+                s.x = w + 40f
+                s.y = h * (0.18f + rng.nextFloat() * 0.56f)
+                s.facingRight = false
+            }
+        }
+    }
+
+    private fun detonate(hunter: Tuna) {
+        nukes += Nuke(hunter.x, hunter.y, 0f)
+        for (s in salmon) {
+            if (!s.dead && hypot(s.x - hunter.x, s.y - hunter.y) < 124f) killSalmon(s)
+        }
+    }
+
+    private fun stepNukes(dt: Float) {
+        val it = nukes.iterator()
+        while (it.hasNext()) {
+            val nuke = it.next()
+            nuke.age += dt
+            if (nuke.age > 0.85f) it.remove()
         }
     }
 
@@ -462,6 +564,7 @@ class SalmonRunView @JvmOverloads constructor(
         for (hunter in tuna) drawTuna(canvas, hunter, t)
         for (shot in shells) drawShell(canvas, shot)
         for (flash in flashes) drawFlash(canvas, flash)
+        for (nuke in nukes) drawNuke(canvas, nuke)
         canvas.restore()
     }
 
@@ -500,9 +603,14 @@ class SalmonRunView @JvmOverloads constructor(
         val blush = 0xFFF4A698.toInt()
         val belly = 0xFFF6D7C5.toInt()
         val mix = if (s.hueShift > 0.5f) blush else body
+        val alpha = (255f * s.fade).toInt().coerceIn(0, 255)
         bodyPaint.color = mix
+        bodyPaint.alpha = alpha
         bellyPaint.color = belly
+        bellyPaint.alpha = alpha
         accentPaint.color = 0xFFD4573C.toInt()
+        accentPaint.alpha = alpha
+        eyePaint.alpha = alpha
 
         val worldY = salmonWorldY(s, t)
         canvas.save()
@@ -540,7 +648,11 @@ class SalmonRunView @JvmOverloads constructor(
 
         canvas.drawCircle(34f, -4f, 3.4f, eyePaint)
         canvas.restore()
-        drawArtillery(canvas, s, worldY)
+        bodyPaint.alpha = 255
+        bellyPaint.alpha = 255
+        accentPaint.alpha = 255
+        eyePaint.alpha = 255
+        if (!s.dead) drawArtillery(canvas, s, worldY)
     }
 
     private fun drawArtillery(canvas: Canvas, s: Salmon, worldY: Float) {
@@ -683,7 +795,52 @@ class SalmonRunView @JvmOverloads constructor(
         canvas.drawPath(fish, finPaint)
 
         canvas.drawCircle(48f, -3f, 3.2f, eyePaint)
+        drawNukeVest(canvas, hunter, t)
         canvas.restore()
+    }
+
+    private fun drawNukeVest(canvas: Canvas, hunter: Tuna, t: Float) {
+        vestPaint.color = 0xFF1A1C14.toInt()
+        canvas.drawRoundRect(-16f, 0f, 18f, 18f, 3f, 3f, vestPaint)
+        vestPaint.color = 0xFF3A3D2A.toInt()
+        canvas.drawRoundRect(-13f, 2f, 15f, 15f, 2f, 2f, vestPaint)
+        val pulse = 0.55f + 0.45f * (0.5f + 0.5f * sin(t * 8f + hunter.phase))
+        hazardPaint.color = (0x00F0D000 or ((0xFF * pulse).toInt() shl 24))
+        canvas.drawCircle(1f, 8f, 5.2f, hazardPaint)
+        hazardPaint.color = 0xFF1A1C14.toInt()
+        canvas.drawCircle(1f, 8f, 1.5f, hazardPaint)
+        for (i in 0 until 3) {
+            val a = i * 2.094f - 0.4f
+            canvas.drawCircle(1f + cos(a) * 3.1f, 8f + sin(a) * 3.1f, 1.7f, hazardPaint)
+        }
+        vestPaint.color = 0xFFE24B3A.toInt()
+        vestPaint.alpha = (80 + 175 * pulse).toInt()
+        canvas.drawCircle(-10f, 4f, 2.1f, vestPaint)
+        vestPaint.alpha = 255
+    }
+
+    private fun drawNuke(canvas: Canvas, nuke: Nuke) {
+        val u = (nuke.age / 0.85f).coerceIn(0f, 1f)
+        val fade = (1f - u).coerceIn(0f, 1f)
+        val r = 18f + u * 168f
+        nukePaint.color = (0x00FF6A1A or ((0x55 * fade).toInt() shl 24))
+        canvas.drawCircle(nuke.x, nuke.y, r, nukePaint)
+        nukePaint.color = (0x00FFC14A or ((0x88 * fade).toInt() shl 24))
+        canvas.drawCircle(nuke.x, nuke.y, r * 0.62f, nukePaint)
+        nukePaint.color = (0x00FFF4C8 or ((0xCC * fade).toInt() shl 24))
+        canvas.drawCircle(nuke.x, nuke.y, r * 0.28f, nukePaint)
+        nukePaint.style = Paint.Style.STROKE
+        nukePaint.strokeWidth = 10f * fade
+        nukePaint.color = (0x00FFE27A or ((0xAA * fade).toInt() shl 24))
+        canvas.drawCircle(nuke.x, nuke.y, r * 0.86f, nukePaint)
+        nukePaint.style = Paint.Style.FILL
+        if (u < 0.45f) {
+            val mark = (1f - u / 0.45f)
+            hazardPaint.color = (0x00F0D000 or ((0xEE * mark).toInt() shl 24))
+            canvas.drawCircle(nuke.x, nuke.y, 10f, hazardPaint)
+            hazardPaint.color = (0x001A1C14 or ((0xEE * mark).toInt() shl 24))
+            canvas.drawCircle(nuke.x, nuke.y, 3f, hazardPaint)
+        }
     }
 
     override fun onAttachedToWindow() {

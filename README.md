@@ -12,7 +12,7 @@ generateToken('+')  // Token<'+'>  →  {"type":"op","value":"+"}
 npm run apk
 ```
 
-Writes `releases/drcr2.apk` (`com.skc45.drcr2`). Salmon swim at war with attached artillery that auto-fires slow and steady, then plays a reload (bolt, shell, hatch, ring). Tap an op and tuna attack from that perimeter:
+Writes `releases/drcr2.apk` (`com.skc45.drcr2`). Salmon swim at war with attached artillery. Tuna wear suicide nuke vests and detonate on the school; salmon in the blast die, then respawn from a river edge. Tap an op and tuna attack from that perimeter:
 
 - `+` top
 - `-` bottom
