@@ -322,6 +322,8 @@ class SalmonRunView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         val w = width.toFloat()
         val h = height.toFloat()
+        canvas.save()
+        canvas.clipRect(0f, 0f, w, h)
         canvas.drawRect(0f, 0f, w, h, waterPaint)
         canvas.drawRect(0f, 0f, w, h * 0.3f, gleamPaint)
         drawWakes(canvas, w, h)
@@ -330,6 +332,7 @@ class SalmonRunView @JvmOverloads constructor(
         val t = SystemClockSeconds()
         for (s in salmon) drawSalmon(canvas, s, t)
         for (hunter in tuna) drawTuna(canvas, hunter, t)
+        canvas.restore()
     }
 
     private fun drawWakes(canvas: Canvas, w: Float, h: Float) {
