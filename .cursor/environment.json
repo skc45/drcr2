@@ -1,0 +1,20 @@
+{
+  "name": "DRCR2",
+  "install": "npm run install:all",
+  "terminals": [
+    {
+      "name": "server",
+      "command": "npm run dev:server",
+      "description": "Express API + static server on port 3001 (serves /api and the built client)."
+    },
+    {
+      "name": "client",
+      "command": "npm run dev:client",
+      "description": "Vite dev server on port 5173 with an /api proxy to the Express server."
+    }
+  ],
+  "ports": [
+    { "name": "api", "port": 3001 },
+    { "name": "web", "port": 5173 }
+  ]
+}
